@@ -67,10 +67,6 @@ def walkFind(image, red_mask, x, y, w, h, movePixel=100):
     y3 = y + h - movePixel
     y4 = y + h - movePixel
 
-    # cv2.circle(image, (x1, y1), 10, (255, 0, 0), 5)
-    # cv2.circle(image, (x2, y2), 10, (255, 0, 0), 5)
-    # cv2.circle(image, (x3, y3), 10, (255, 0, 0), 5)
-    # cv2.circle(image, (x4, y4), 10, (255, 0, 0), 5)
 
     #左上
     conti = 1
@@ -149,8 +145,8 @@ def crop_img(img_path):
     hsv_image = cv2.cvtColor(ori_img, cv2.COLOR_BGR2HSV)
 
     # 定義紅色的HSV閾值範圍
-    lower_red = np.array([30, 40, 200])  # 下限閾值
-    upper_red = np.array([90, 100, 255]) # 上限閾值
+    lower_red = np.array([0, 75, 75])  # 下限閾值
+    upper_red = np.array([10, 255, 255]) # 上限閾值
 
     # 使用inRange函式根據閾值範圍創建遮罩
     red_mask = cv2.inRange(hsv_image, lower_red, upper_red)
@@ -160,25 +156,12 @@ def crop_img(img_path):
     # 找到最大的輪廓
     largest_contour = max(contours, key=cv2.contourArea)
     x, y, w, h = cv2.boundingRect(largest_contour)
-    
-    # 若有找到最大的方框
-    max_area = 0
-    max_contour = None
-    for contour in contours:
-        area = cv2.contourArea(contour)
-        if area > max_area:
-            max_area = area
-            max_contour = contour
 
     # 切割最大的方框區域，否則使用原圖
-    if max_contour is not None:
-        # x, y, w, h = cv2.boundingRect(max_contour)
-        x, y, w, h = walkFind(ori_img, red_mask, x, y, w, h)
-        max_box_region = ori_img[y:y+h, x:x+w].copy()
-        if(max_box_region.size > 1500000):
-            ori_img = max_box_region
+    x, y, w, h = walkFind(ori_img, red_mask, x, y, w, h)
+    max_box_region = ori_img[y:y+h, x:x+w].copy()
 
-    return ori_img
+    return max_box_region
 
 def create_folders():
     if not os.path.exists(outputimg_folder):
@@ -246,7 +229,7 @@ def perform_ocr():
             if page_string in filename:
                 # 執行處理 page1-8 的檔案
 
-                ocr = PaddleOCR(use_angle_cls=True, lang='ch')
+                ocr = PaddleOCR(use_angle_cls=True, lang='chinese_cht', return_word_box=True)
                 img_path = os.path.join(pdfoutputimg_folder_main, filename)
 
                 result = ocr.ocr(img_path, cls=True)
